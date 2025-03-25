@@ -10,7 +10,21 @@ try {
   assert(args.token, '`--file` is required');
   assert(args.token, '`--token` is required');
   assert(args.service, '`--service` is required');
-  assert(args.version, '`--version` is required');
+
+  if (typeof args.service === "string") {
+    assert(args.version, '`--version` is required when updating single service');
+    args.service = [`${args.service}:${args.version}`];
+  }
+  assert(Array.isArray(args.service), '`--service` must be a string or an array of strings');
+  assert(args.service.length > 0, 'must provide at least one option for `--service`');
+
+  args.services = args.service.map((s) => {
+    assert(typeof s === 'string', '`--service` must be a string or an array of strings');
+    const [name, version] = s.split(':');
+    assert(name, 'service name is required');
+    assert(version, 'service version is required');
+    return { name, version };
+  })
 } catch (e) {
   console.error(e.message);
   process.exit(1);
@@ -23,7 +37,7 @@ const updater = Updater({
   branch: args.branch || 'master'
 });
 
-updater.update(args.service, args.version)
+updater.update(args.services)
   .catch((e) => {
     console.error(e);
     process.exit(1);
